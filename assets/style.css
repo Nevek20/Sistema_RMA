@@ -17,13 +17,15 @@
 }
 
 body {
-    font-family: Inter, Segoe UI, Arial, sans-serif;
+    font-family: Segoe UI, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
+
+/* ===== HEADER ===== */
 
 header {
     background: var(--card);
@@ -43,15 +45,18 @@ nav {
 nav a {
     text-decoration: none;
     color: var(--secondary);
-    padding: 6px 12px;
+    padding: 8px 14px;
     border-radius: var(--radius);
     font-size: 14px;
+    transition: 0.2s ease;
 }
 
 nav a:hover {
     background: var(--primary);
     color: #fff;
 }
+
+/* ===== MAIN ===== */
 
 main {
     flex: 1;
@@ -66,12 +71,15 @@ main {
     background: var(--card);
     padding: 28px;
     border-radius: var(--radius);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.04);
 }
 
 h2 {
     text-align: center;
     margin-bottom: 20px;
 }
+
+/* ===== MENSAGEM ===== */
 
 .msg {
     background: #fff7ed;
@@ -82,6 +90,8 @@ h2 {
     text-align: center;
     margin-bottom: 20px;
 }
+
+/* ===== FORM BOX ===== */
 
 .form-box {
     max-width: 600px;
@@ -95,6 +105,7 @@ h2 {
     padding: 10px;
     border-radius: var(--radius);
     border: 1px solid var(--border);
+    font-size: 14px;
 }
 
 .form-box button {
@@ -104,28 +115,60 @@ h2 {
     border: none;
     border-radius: var(--radius);
     cursor: pointer;
+    transition: 0.2s ease;
 }
+
+.form-box button:hover {
+    background: var(--primary-dark);
+}
+
+/* ===== SEARCH BOX ===== */
 
 .search-box {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
+    margin: 25px 0 20px 0;
+    flex-wrap: wrap;
 }
+
+.search-box input {
+    padding: 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: 250px;
+}
+
+.search-box button {
+    padding: 10px 16px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.search-box button:hover {
+    background: var(--primary-dark);
+}
+
+/* ===== TABLE ===== */
 
 table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 14px;
 }
 
 th {
     background: #fff7ed;
-    padding: 10px;
+    padding: 12px;
     color: var(--primary-dark);
 }
 
 td {
-    padding: 10px;
+    padding: 12px;
     border-bottom: 1px solid var(--border);
     text-align: center;
 }
@@ -134,9 +177,22 @@ tr:hover td {
     background: #fff7ed;
 }
 
+/* ===== FOOTER ===== */
+
 footer {
     text-align: center;
     padding: 16px;
     font-size: 12px;
     color: var(--muted);
+}
+
+footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+footer a:hover {
+    text-decoration: underline;
 }
