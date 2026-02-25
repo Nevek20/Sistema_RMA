@@ -60,17 +60,38 @@ if (isset($_POST['add_produto'])) {
 /* ================= VINCULAR ================= */
 
 if (isset($_POST['vincular'])) {
-    $id_proc = (int)$_POST['processador'];
-    $id_cli  = (int)$_POST['cliente'];
-    $sn      = $conn->real_escape_string($_POST['sn']);
 
-    $sql = "INSERT INTO processador_cliente 
-            (cliente_id, processador_id, serial_number) 
-            VALUES ($id_cli, $id_proc, '$sn')";
+    $id_cli = (int)$_POST['cliente'];
 
-    $msg = $conn->query($sql)
-        ? "Processador vinculado ao cliente."
-        : "Erro: SN já existe ou dados inválidos.";
+    $processadores = $_POST['processador'];
+    $sns = $_POST['sn'];
+
+    $erros = 0;
+    $sucesso = 0;
+
+    for ($i = 0; $i < count($processadores); $i++) {
+
+        $id_proc = (int)$processadores[$i];
+        $sn = $conn->real_escape_string($sns[$i]);
+
+        if ($id_proc && $sn) {
+
+            $sql = "INSERT INTO processador_cliente 
+                    (cliente_id, processador_id, serial_number) 
+                    VALUES ($id_cli, $id_proc, '$sn')";
+
+            if ($conn->query($sql)) {
+                $sucesso++;
+            } else {
+                $erros++;
+            }
+        }
+    }
+
+    $msg = "$sucesso processador(es) vinculado(s).";
+    if ($erros > 0) {
+        $msg .= " $erros erro(s) ocorreram (SN duplicado?).";
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -78,7 +99,7 @@ if (isset($_POST['vincular'])) {
 <head>
 <meta charset="UTF-8">
 <title>Sistema RMA</title>
-<link rel="stylesheet" href="assets/style.css?v=2">
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
@@ -152,9 +173,19 @@ while ($p = $res->fetch_assoc()):
 <?php elseif ($pagina == "vincular"): ?>
 
 <h2>Vincular Processador</h2>
-<form method="POST" class="form-box">
 
-<select name="processador" required>
+<form method="POST" class="form-box" id="formVincular">
+
+<div id="processadores-container">
+
+<div class="item-processador">
+
+<div class="linha-topo">
+<span>Processador</span>
+<button type="button" class="btn-plus" onclick="addProcessador()">+</button>
+</div>
+
+<select name="processador[]" required>
 <option value="">Modelo</option>
 <?php
 $res = $conn->query("SELECT id, modelo FROM processadores ORDER BY modelo");
@@ -164,7 +195,11 @@ while ($p = $res->fetch_assoc()):
 <?php endwhile; ?>
 </select>
 
-<input type="text" name="sn" placeholder="Serial Number" required>
+<input type="text" name="sn[]" placeholder="Serial Number" required>
+
+</div>
+
+</div>
 
 <select name="cliente" required>
 <option value="">Cliente</option>
@@ -177,6 +212,7 @@ while ($c = $res->fetch_assoc()):
 </select>
 
 <button name="vincular">Vincular</button>
+
 </form>
 
 <?php elseif ($pagina == "backup"): ?>
@@ -254,6 +290,6 @@ while ($r = $res->fetch_assoc()):
 <footer>
 Made by Matheus Guida • <a href="https://github.com/Nevek20">GitHub</a>
 </footer>
-
+<script src="assets/js/processadores.js"></script>
 </body>
 </html>
