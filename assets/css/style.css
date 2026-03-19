@@ -1,4 +1,4 @@
-﻿* {
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -35,11 +35,13 @@ header {
 nav {
     max-width: 1200px;
     margin: auto;
-    padding: 16px;
+    padding: 12px 16px;
     display: flex;
-    gap: 12px;
+    align-items: center;
     justify-content: center;
+    gap: 8px;
     flex-wrap: wrap;
+    position: relative;
 }
 
 nav a {
@@ -54,6 +56,27 @@ nav a {
 nav a:hover {
     background: var(--primary);
     color: #fff;
+}
+
+/* Cadeado fixo no canto direito, sem afetar o centro */
+.btn-lock {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    line-height: 1;
+}
+
+.btn-lock:hover {
+    background: #fff7ed;
+    border-color: var(--primary);
 }
 
 /* ===== MAIN ===== */
@@ -123,7 +146,7 @@ h2 {
     background: var(--primary-dark);
 }
 
-/* ===== MULTIPLOS PROCESSADORES ===== */
+/* ===== MÚLTIPLOS PROCESSADORES ===== */
 
 #processadores-container {
     display: grid;
@@ -139,8 +162,6 @@ h2 {
     gap: 10px;
 }
 
-/* Linha do título + botão */
-
 .linha-topo {
     display: flex;
     align-items: center;
@@ -148,8 +169,6 @@ h2 {
     font-size: 13px;
     color: var(--secondary);
 }
-
-/* Botão + pequeno */
 
 .btn-plus {
     width: 28px;
@@ -165,21 +184,7 @@ h2 {
     justify-content: center;
 }
 
-.btn-plus:hover {
-    background: var(--primary-dark);
-}
-
-/* Botão + */
-
-.btn-add {
-    background: #e2e8f0 !important;
-    color: var(--text) !important;
-    font-weight: 500;
-}
-
-.btn-add:hover {
-    background: #cbd5e1 !important;
-}
+.btn-plus:hover { background: var(--primary-dark); }
 
 .btn-minus {
     width: 28px;
@@ -196,9 +201,7 @@ h2 {
     justify-content: center;
 }
 
-.btn-minus:hover {
-    background: #b91c1c;
-}
+.btn-minus:hover { background: #b91c1c; }
 
 /* ===== SEARCH BOX ===== */
 
@@ -227,9 +230,7 @@ h2 {
     transition: 0.2s ease;
 }
 
-.search-box button:hover {
-    background: var(--primary-dark);
-}
+.search-box button:hover { background: var(--primary-dark); }
 
 /* ===== TABLE ===== */
 
@@ -251,8 +252,51 @@ td {
     text-align: center;
 }
 
-tr:hover td {
-    background: #fff7ed;
+tr:hover td { background: #fff7ed; }
+
+/* Coluna de checkbox: sempre ocupa espaço, fica invisível quando bloqueado */
+.col-check {
+    width: 40px;
+    text-align: center;
+}
+
+.col-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    visibility: hidden;   /* ocupa espaço mas some */
+}
+
+.modo-edicao .col-check input[type="checkbox"] {
+    visibility: visible;
+}
+
+/* ===== PAGINAÇÃO ===== */
+
+.paginacao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--secondary);
+}
+
+.paginacao a {
+    text-decoration: none;
+    color: var(--primary);
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: 0.2s ease;
+}
+
+.paginacao a:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
 }
 
 /* ===== FOOTER ===== */
@@ -271,6 +315,137 @@ footer a {
     transition: 0.2s;
 }
 
-footer a:hover {
-    text-decoration: underline;
+footer a:hover { text-decoration: underline; }
+
+/* ===== MODAL OVERLAY ===== */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
+
+.modal-overlay.ativo {
+    display: flex;
+}
+
+.modal-box {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    display: grid;
+    gap: 14px;
+}
+
+.modal-box h3 {
+    text-align: center;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.modal-box input,
+.modal-box select {
+    padding: 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    width: 100%;
+}
+
+.modal-box label {
+    font-size: 13px;
+    color: var(--secondary);
+    margin-bottom: -6px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.modal-actions button {
+    padding: 9px 18px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    background: var(--primary);
+    color: #fff;
+    transition: 0.2s ease;
+}
+
+.modal-actions button:hover { background: var(--primary-dark); }
+
+.btn-secundario {
+    background: #e2e8f0 !important;
+    color: var(--text) !important;
+}
+
+.btn-secundario:hover { background: #cbd5e1 !important; }
+
+/* ===== ERRO MSG ===== */
+
+.erro-msg {
+    display: none;
+    color: #dc2626;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ===== BARRA DE AÇÕES ===== */
+
+.barra-acoes {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--text);
+    color: #fff;
+    padding: 14px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 900;
+    font-size: 14px;
+}
+
+.barra-acoes.ativo { display: flex; }
+
+.barra-botoes {
+    display: flex;
+    gap: 10px;
+}
+
+.barra-acoes button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    background: var(--primary);
+    color: #fff;
+    transition: 0.2s ease;
+}
+
+.barra-acoes button:hover { background: var(--primary-dark); }
+
+.barra-acoes button:disabled {
+    background: #475569;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-excluir-barra { background: #dc2626 !important; }
+.btn-excluir-barra:hover { background: #b91c1c !important; }
