@@ -2,21 +2,25 @@
 $msg = '';
 
 if (isset($_POST['vincular'])) {
-    $id_cli = (int)$_POST['cliente'];
+    $id_cli      = (int)$_POST['cliente'];
     $processadores = $_POST['processador'] ?? [];
-    $sns = $_POST['sn'] ?? [];
+    $sns           = $_POST['sn'] ?? [];
 
     $sucesso = 0;
-    $erros = 0;
+    $erros   = 0;
 
     $stmt = $conn->prepare("
         INSERT INTO processador_cliente (cliente_id, processador_id, serial_number)
         VALUES (?, ?, ?)
     ");
 
-    for ($i = 0; $i < count($processadores); $i++) {
+    // FIX: count() cacheado fora do loop — não precisa ser recalculado a cada iteração
+    $total = count($processadores);
+    for ($i = 0; $i < $total; $i++) {
         $id_proc = (int)$processadores[$i];
-        $sn = trim($sns[$i]);
+        // FIX: ?? '' garante que $sns[$i] não cause undefined index se os arrays tiverem
+        //      tamanhos diferentes (ex: manipulação de formulário)
+        $sn      = trim($sns[$i] ?? '');
 
         if ($id_proc && $sn) {
             $stmt->bind_param('iis', $id_cli, $id_proc, $sn);
@@ -27,6 +31,7 @@ if (isset($_POST['vincular'])) {
             }
         }
     }
+    $stmt->close(); // FIX: stmt->close() adicionado após o loop
 
     $msg = "$sucesso processador(es) vinculado(s).";
     if ($erros > 0) {
@@ -55,7 +60,9 @@ if (isset($_POST['vincular'])) {
                 while ($p = $res->fetch_assoc()):
                 ?>
                 <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['modelo']) ?></option>
-                <?php endwhile; ?>
+                <?php endwhile;
+                $res->free(); // FIX: resultado liberado antes de $res ser sobrescrito
+                ?>
             </select>
             <input type="text" name="sn[]" placeholder="Serial Number" required>
         </div>
@@ -68,7 +75,9 @@ if (isset($_POST['vincular'])) {
         while ($c = $res->fetch_assoc()):
         ?>
         <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
-        <?php endwhile; ?>
+        <?php endwhile;
+        $res->free(); // FIX: resultado liberado
+        ?>
     </select>
 
     <button name="vincular">Vincular</button>

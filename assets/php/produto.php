@@ -11,22 +11,35 @@ if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
         $msg = $stmt->execute()
             ? $stmt->affected_rows . " modelo(s) excluído(s)."
             : "Erro: processador possui vínculos ativos.";
+        $stmt->close(); // FIX: stmt->close() adicionado
     }
 }
 
 if (isset($_POST['salvar_edicao'])) {
     $id     = (int)$_POST['editar_id'];
     $modelo = trim($_POST['modelo']);
-    $stmt = $conn->prepare("UPDATE processadores SET modelo=? WHERE id=?");
-    $stmt->bind_param('si', $modelo, $id);
-    $msg = $stmt->execute() ? "Modelo atualizado." : "Erro (modelo duplicado?).";
+    // FIX: validação de string vazia adicionada
+    if ($modelo === '') {
+        $msg = "Modelo não pode ser vazio.";
+    } else {
+        $stmt = $conn->prepare("UPDATE processadores SET modelo=? WHERE id=?");
+        $stmt->bind_param('si', $modelo, $id);
+        $msg = $stmt->execute() ? "Modelo atualizado." : "Erro (modelo duplicado?).";
+        $stmt->close(); // FIX: stmt->close() adicionado
+    }
 }
 
 if (isset($_POST['add_produto'])) {
     $modelo = trim($_POST['modelo_novo']);
-    $stmt = $conn->prepare("INSERT INTO processadores (modelo) VALUES (?)");
-    $stmt->bind_param('s', $modelo);
-    $msg = $stmt->execute() ? "Modelo cadastrado." : "Erro: modelo já existe.";
+    // FIX: validação de string vazia adicionada
+    if ($modelo === '') {
+        $msg = "Modelo não pode ser vazio.";
+    } else {
+        $stmt = $conn->prepare("INSERT INTO processadores (modelo) VALUES (?)");
+        $stmt->bind_param('s', $modelo);
+        $msg = $stmt->execute() ? "Modelo cadastrado." : "Erro: modelo já existe.";
+        $stmt->close(); // FIX: stmt->close() adicionado
+    }
 }
 ?>
 
@@ -70,7 +83,11 @@ $res = $stmt->get_result();
         <td class="col-check"><input type="checkbox" class="row-check" onchange="atualizarBarra()"></td>
         <td><?= htmlspecialchars($p['modelo']) ?></td>
     </tr>
-    <?php endwhile; ?>
+    <?php endwhile;
+    // FIX: resultado e statement liberados após o loop
+    $res->free();
+    $stmt->close();
+    ?>
 </table>
 
 <form method="POST" id="form-excluir" style="display:none">

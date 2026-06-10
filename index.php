@@ -35,8 +35,9 @@ if (!in_array($pagina, $paginas_validas)) {
 <div id="modal-senha" class="modal-overlay">
     <div class="modal-box">
         <h3>Modo de Edição</h3>
-        <input type="password" id="input-senha" placeholder="Senha"
-               onkeydown="if(event.key==='Enter') confirmarSenha()">
+        <!-- FIX: onkeydown removido — o listener global em processadores.js já trata o Enter,
+             manter os dois fazia confirmarSenha() ser chamada duas vezes ao errar a senha -->
+        <input type="password" id="input-senha" placeholder="Senha">
         <p id="senha-erro" class="erro-msg">Senha incorreta.</p>
         <div class="modal-actions">
             <button type="button" class="btn-secundario" onclick="fecharModalSenha()">Cancelar</button>
@@ -66,5 +67,6 @@ if (!in_array($pagina, $paginas_validas)) {
 
 <script>const ADMIN_PASS = "<?= htmlspecialchars(ADMIN_PASS, ENT_QUOTES) ?>";</script>
 <script src="assets/js/processadores.js"></script>
+<?php $conn->close(); ?>
 </body>
 </html>

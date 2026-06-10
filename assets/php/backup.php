@@ -7,6 +7,9 @@ $diasDesdeUltimo = null;
 $arquivos = glob($backupDir . "/*.sql");
 if ($arquivos) {
     $ultimoArquivo = array_reduce($arquivos, function ($a, $b) {
+        // FIX: sem valor inicial, $a é null na primeira chamada — passá-lo direto para
+        //      filemtime() causava warning no PHP 8 e TypeError no PHP 8.1+
+        if ($a === null) return $b;
         return filemtime($a) > filemtime($b) ? $a : $b;
     });
     $ultimoBackup = filemtime($ultimoArquivo);

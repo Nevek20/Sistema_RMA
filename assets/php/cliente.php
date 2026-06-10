@@ -11,22 +11,35 @@ if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
         $msg = $stmt->execute()
             ? $stmt->affected_rows . " cliente(s) excluído(s)."
             : "Erro: cliente possui vínculos ativos.";
+        $stmt->close(); // FIX: stmt->close() adicionado
     }
 }
 
 if (isset($_POST['salvar_edicao'])) {
     $id   = (int)$_POST['editar_id'];
     $nome = trim($_POST['nome']);
-    $stmt = $conn->prepare("UPDATE clientes SET nome=? WHERE id=?");
-    $stmt->bind_param('si', $nome, $id);
-    $msg = $stmt->execute() ? "Cliente atualizado." : "Erro (nome duplicado?).";
+    // FIX: validação de string vazia adicionada
+    if ($nome === '') {
+        $msg = "Nome não pode ser vazio.";
+    } else {
+        $stmt = $conn->prepare("UPDATE clientes SET nome=? WHERE id=?");
+        $stmt->bind_param('si', $nome, $id);
+        $msg = $stmt->execute() ? "Cliente atualizado." : "Erro (nome duplicado?).";
+        $stmt->close(); // FIX: stmt->close() adicionado
+    }
 }
 
 if (isset($_POST['add_cliente'])) {
     $nome = trim($_POST['nome_novo']);
-    $stmt = $conn->prepare("INSERT INTO clientes (nome) VALUES (?)");
-    $stmt->bind_param('s', $nome);
-    $msg = $stmt->execute() ? "Cliente cadastrado." : "Erro: cliente já existe.";
+    // FIX: validação de string vazia adicionada
+    if ($nome === '') {
+        $msg = "Nome não pode ser vazio.";
+    } else {
+        $stmt = $conn->prepare("INSERT INTO clientes (nome) VALUES (?)");
+        $stmt->bind_param('s', $nome);
+        $msg = $stmt->execute() ? "Cliente cadastrado." : "Erro: cliente já existe.";
+        $stmt->close(); // FIX: stmt->close() adicionado
+    }
 }
 ?>
 
@@ -70,7 +83,11 @@ $res = $stmt->get_result();
         <td class="col-check"><input type="checkbox" class="row-check" onchange="atualizarBarra()"></td>
         <td><?= htmlspecialchars($c['nome']) ?></td>
     </tr>
-    <?php endwhile; ?>
+    <?php endwhile;
+    // FIX: resultado e statement liberados após o loop
+    $res->free();
+    $stmt->close();
+    ?>
 </table>
 
 <form method="POST" id="form-excluir" style="display:none">

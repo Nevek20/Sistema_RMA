@@ -7,8 +7,11 @@ if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $conn->prepare("DELETE FROM processador_cliente WHERE id IN ($placeholders)");
         $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
-        $stmt->execute();
-        $msg = $stmt->affected_rows . " vínculo(s) excluído(s).";
+        // FIX: adicionada verificação do execute() + stmt->close()
+        $msg = $stmt->execute()
+            ? $stmt->affected_rows . " vínculo(s) excluído(s)."
+            : "Erro ao excluir.";
+        $stmt->close();
     }
 }
 
@@ -20,6 +23,7 @@ if (isset($_POST['salvar_edicao'])) {
     $stmt = $conn->prepare("UPDATE processador_cliente SET processador_id=?, cliente_id=?, serial_number=? WHERE id=?");
     $stmt->bind_param('iisi', $proc_id, $cli_id, $sn, $id);
     $msg = $stmt->execute() ? "Vínculo atualizado." : "Erro (SN duplicado?).";
+    $stmt->close(); // FIX: stmt->close() adicionado
 }
 
 $limite       = 20;
@@ -50,11 +54,15 @@ if ($busca) {
     $stmtCount = $conn->prepare("SELECT COUNT(*) AS total FROM processador_cliente");
 }
 $stmtCount->execute();
-$total = $stmtCount->get_result()->fetch_assoc()['total'];
+// FIX: get_result() armazenado para poder chamar free() e evitar leak
+$countResult = $stmtCount->get_result();
+$total = $countResult->fetch_assoc()['total'];
+$countResult->free();
+$stmtCount->close();
 $total_paginas = max(ceil($total / $limite), 1);
 
 if ($busca) {
-    $like = "%$busca%";
+    // FIX: $like removido daqui — já foi definido no bloco do count acima
     $stmt = $conn->prepare("SELECT pc.id, pc.serial_number, pc.data_cadastro, c.id AS cliente_id, c.nome AS cliente, p.id AS processador_id, p.modelo FROM processador_cliente pc JOIN clientes c ON c.id=pc.cliente_id JOIN processadores p ON p.id=pc.processador_id WHERE c.nome LIKE ? OR p.modelo LIKE ? OR pc.serial_number LIKE ? ORDER BY pc.data_cadastro DESC LIMIT ?,?");
     $stmt->bind_param('sssii', $like, $like, $like, $inicio, $limite);
 } else {
@@ -81,7 +89,11 @@ $res = $stmt->get_result();
         <td><?= htmlspecialchars($r['cliente']) ?></td>
         <td><?= htmlspecialchars($r['data_cadastro']) ?></td>
     </tr>
-    <?php endwhile; ?>
+    <?php endwhile;
+    // FIX: resultado e statement liberados após o loop
+    $res->free();
+    $stmt->close();
+    ?>
 </table>
 
 <?php if ($total_paginas > 1): ?>
@@ -113,7 +125,9 @@ $res = $stmt->get_result();
                 $rp = $conn->query("SELECT id, modelo FROM processadores ORDER BY modelo");
                 while ($p = $rp->fetch_assoc()):
                 ?><option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['modelo']) ?></option>
-                <?php endwhile; ?>
+                <?php endwhile;
+                $rp->free(); // FIX: resultado liberado
+                ?>
             </select>
             <label>Serial Number</label>
             <input type="text" name="serial_number" id="edit-sn" placeholder="Serial Number" required>
@@ -124,7 +138,9 @@ $res = $stmt->get_result();
                 $rc = $conn->query("SELECT id, nome FROM clientes ORDER BY nome");
                 while ($c = $rc->fetch_assoc()):
                 ?><option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
-                <?php endwhile; ?>
+                <?php endwhile;
+                $rc->free(); // FIX: resultado liberado
+                ?>
             </select>
             <div class="modal-actions">
                 <button type="button" class="btn-secundario" onclick="fecharModalEditar()">Cancelar</button>
@@ -132,4 +148,4 @@ $res = $stmt->get_result();
             </div>
         </form>
     </div>
-</div>  
+</div>
