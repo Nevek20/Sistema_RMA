@@ -1,6 +1,6 @@
 <?php
-$msg  = '';
-$busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
+$msg   = '';
+$busca = trim($_GET['busca'] ?? '');
 
 if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
     $ids = array_filter(array_map('intval', explode(',', $_POST['excluir_ids'])));
@@ -8,37 +8,48 @@ if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $conn->prepare("DELETE FROM clientes WHERE id IN ($placeholders)");
         $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
-        $msg = $stmt->execute()
-            ? $stmt->affected_rows . " cliente(s) excluído(s)."
-            : "Erro: cliente possui vínculos ativos.";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = $stmt->affected_rows . " cliente(s) excluído(s).";
+            registrarLog($conn, 'EXCLUIR', 'cliente', "IDs excluídos: " . implode(', ', $ids));
+        } else {
+            $msg = "Erro: cliente possui vínculos ativos.";
+        }
+        $stmt->close();
     }
 }
 
 if (isset($_POST['salvar_edicao'])) {
     $id   = (int)$_POST['editar_id'];
     $nome = trim($_POST['nome']);
-    // FIX: validação de string vazia adicionada
     if ($nome === '') {
         $msg = "Nome não pode ser vazio.";
     } else {
         $stmt = $conn->prepare("UPDATE clientes SET nome=? WHERE id=?");
         $stmt->bind_param('si', $nome, $id);
-        $msg = $stmt->execute() ? "Cliente atualizado." : "Erro (nome duplicado?).";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = "Cliente atualizado.";
+            registrarLog($conn, 'EDITAR', 'cliente', "ID: $id | Novo nome: $nome");
+        } else {
+            $msg = "Erro (nome duplicado?).";
+        }
+        $stmt->close();
     }
 }
 
 if (isset($_POST['add_cliente'])) {
     $nome = trim($_POST['nome_novo']);
-    // FIX: validação de string vazia adicionada
     if ($nome === '') {
         $msg = "Nome não pode ser vazio.";
     } else {
         $stmt = $conn->prepare("INSERT INTO clientes (nome) VALUES (?)");
         $stmt->bind_param('s', $nome);
-        $msg = $stmt->execute() ? "Cliente cadastrado." : "Erro: cliente já existe.";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = "Cliente cadastrado.";
+            registrarLog($conn, 'INSERIR', 'cliente', "Nome: $nome");
+        } else {
+            $msg = "Erro: cliente já existe.";
+        }
+        $stmt->close();
     }
 }
 ?>
@@ -78,13 +89,11 @@ $res = $stmt->get_result();
         <th>Clientes</th>
     </tr>
     <?php while ($c = $res->fetch_assoc()): ?>
-    <tr data-id="<?= $c['id'] ?>"
-        data-nome="<?= htmlspecialchars($c['nome'], ENT_QUOTES) ?>">
+    <tr data-id="<?= $c['id'] ?>" data-nome="<?= htmlspecialchars($c['nome'], ENT_QUOTES) ?>">
         <td class="col-check"><input type="checkbox" class="row-check" onchange="atualizarBarra()"></td>
         <td><?= htmlspecialchars($c['nome']) ?></td>
     </tr>
     <?php endwhile;
-    // FIX: resultado e statement liberados após o loop
     $res->free();
     $stmt->close();
     ?>

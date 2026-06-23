@@ -14,29 +14,24 @@ if (isset($_POST['vincular'])) {
         VALUES (?, ?, ?)
     ");
 
-    // FIX: count() cacheado fora do loop — não precisa ser recalculado a cada iteração
     $total = count($processadores);
     for ($i = 0; $i < $total; $i++) {
         $id_proc = (int)$processadores[$i];
-        // FIX: ?? '' garante que $sns[$i] não cause undefined index se os arrays tiverem
-        //      tamanhos diferentes (ex: manipulação de formulário)
         $sn      = trim($sns[$i] ?? '');
-
         if ($id_proc && $sn) {
             $stmt->bind_param('iis', $id_cli, $id_proc, $sn);
             if ($stmt->execute()) {
                 $sucesso++;
+                registrarLog($conn, 'VINCULAR', 'vínculo', "Proc. ID: $id_proc | SN: $sn | Cliente ID: $id_cli");
             } else {
                 $erros++;
             }
         }
     }
-    $stmt->close(); // FIX: stmt->close() adicionado após o loop
+    $stmt->close();
 
     $msg = "$sucesso processador(es) vinculado(s).";
-    if ($erros > 0) {
-        $msg .= " $erros erro(s) ocorreram (SN duplicado?).";
-    }
+    if ($erros > 0) $msg .= " $erros erro(s) ocorreram (SN duplicado?).";
 }
 ?>
 
@@ -47,39 +42,27 @@ if (isset($_POST['vincular'])) {
 <?php endif; ?>
 
 <form method="POST" class="form-box" id="formVincular">
-
     <div id="processadores-container">
         <div class="item-processador">
-            <div class="linha-topo">
-                <span>Processador</span>
-            </div>
+            <div class="linha-topo"><span>Processador</span></div>
             <select name="processador[]" required>
                 <option value="">Modelo</option>
                 <?php
                 $res = $conn->query("SELECT id, modelo FROM processadores ORDER BY modelo");
                 while ($p = $res->fetch_assoc()):
-                ?>
-                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['modelo']) ?></option>
-                <?php endwhile;
-                $res->free(); // FIX: resultado liberado antes de $res ser sobrescrito
-                ?>
+                ?><option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['modelo']) ?></option>
+                <?php endwhile; $res->free(); ?>
             </select>
             <input type="text" name="sn[]" placeholder="Serial Number" required>
         </div>
     </div>
-
     <select name="cliente" required>
         <option value="">Cliente</option>
         <?php
         $res = $conn->query("SELECT id, nome FROM clientes ORDER BY nome");
         while ($c = $res->fetch_assoc()):
-        ?>
-        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
-        <?php endwhile;
-        $res->free(); // FIX: resultado liberado
-        ?>
+        ?><option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
+        <?php endwhile; $res->free(); ?>
     </select>
-
     <button name="vincular">Vincular</button>
-
 </form>

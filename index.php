@@ -3,7 +3,7 @@ require_once 'assets/php/db.php';
 $conn = getConn();
 
 $pagina = isset($_GET['pagina']) ? $_GET['pagina'] : 'listar';
-$paginas_validas = ['listar', 'vincular', 'produto', 'cliente', 'backup'];
+$paginas_validas = ['dashboard', 'listar', 'vincular', 'produto', 'cliente', 'historico', 'backup'];
 if (!in_array($pagina, $paginas_validas)) {
     $pagina = 'listar';
 }
@@ -21,11 +21,13 @@ if (!in_array($pagina, $paginas_validas)) {
     <nav>
         <div class="nav-spacer"></div>
         <div class="nav-links">
-            <a href="?pagina=listar">Processadores vinculados</a>
-            <a href="?pagina=vincular">Vincular processador</a>
+            <a href="?pagina=dashboard">Dashboard</a>
+            <a href="?pagina=listar">Vinculados</a>
+            <a href="?pagina=vincular">Vincular</a>
             <a href="?pagina=produto">Processadores</a>
             <a href="?pagina=cliente">Clientes</a>
-            <a href="?pagina=backup">Backup do banco</a>
+            <a href="?pagina=historico">Histórico</a>
+            <a href="?pagina=backup">Backup</a>
         </div>
         <button id="btn-lock" class="btn-lock" onclick="abrirModalSenha()" title="Modo de edição">🔒</button>
     </nav>
@@ -35,8 +37,6 @@ if (!in_array($pagina, $paginas_validas)) {
 <div id="modal-senha" class="modal-overlay">
     <div class="modal-box">
         <h3>Modo de Edição</h3>
-        <!-- FIX: onkeydown removido — o listener global em processadores.js já trata o Enter,
-             manter os dois fazia confirmarSenha() ser chamada duas vezes ao errar a senha -->
         <input type="password" id="input-senha" placeholder="Senha">
         <p id="senha-erro" class="erro-msg">Senha incorreta.</p>
         <div class="modal-actions">

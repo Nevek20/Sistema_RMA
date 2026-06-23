@@ -1,6 +1,6 @@
 <?php
-$msg  = '';
-$busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
+$msg   = '';
+$busca = trim($_GET['busca'] ?? '');
 
 if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
     $ids = array_filter(array_map('intval', explode(',', $_POST['excluir_ids'])));
@@ -8,37 +8,48 @@ if (isset($_POST['excluir']) && !empty($_POST['excluir_ids'])) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $conn->prepare("DELETE FROM processadores WHERE id IN ($placeholders)");
         $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
-        $msg = $stmt->execute()
-            ? $stmt->affected_rows . " modelo(s) excluído(s)."
-            : "Erro: processador possui vínculos ativos.";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = $stmt->affected_rows . " modelo(s) excluído(s).";
+            registrarLog($conn, 'EXCLUIR', 'modelo', "IDs excluídos: " . implode(', ', $ids));
+        } else {
+            $msg = "Erro: processador possui vínculos ativos.";
+        }
+        $stmt->close();
     }
 }
 
 if (isset($_POST['salvar_edicao'])) {
     $id     = (int)$_POST['editar_id'];
     $modelo = trim($_POST['modelo']);
-    // FIX: validação de string vazia adicionada
     if ($modelo === '') {
         $msg = "Modelo não pode ser vazio.";
     } else {
         $stmt = $conn->prepare("UPDATE processadores SET modelo=? WHERE id=?");
         $stmt->bind_param('si', $modelo, $id);
-        $msg = $stmt->execute() ? "Modelo atualizado." : "Erro (modelo duplicado?).";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = "Modelo atualizado.";
+            registrarLog($conn, 'EDITAR', 'modelo', "ID: $id | Novo modelo: $modelo");
+        } else {
+            $msg = "Erro (modelo duplicado?).";
+        }
+        $stmt->close();
     }
 }
 
 if (isset($_POST['add_produto'])) {
     $modelo = trim($_POST['modelo_novo']);
-    // FIX: validação de string vazia adicionada
     if ($modelo === '') {
         $msg = "Modelo não pode ser vazio.";
     } else {
         $stmt = $conn->prepare("INSERT INTO processadores (modelo) VALUES (?)");
         $stmt->bind_param('s', $modelo);
-        $msg = $stmt->execute() ? "Modelo cadastrado." : "Erro: modelo já existe.";
-        $stmt->close(); // FIX: stmt->close() adicionado
+        if ($stmt->execute()) {
+            $msg = "Modelo cadastrado.";
+            registrarLog($conn, 'INSERIR', 'modelo', "Modelo: $modelo");
+        } else {
+            $msg = "Erro: modelo já existe.";
+        }
+        $stmt->close();
     }
 }
 ?>
@@ -78,13 +89,11 @@ $res = $stmt->get_result();
         <th>Modelos</th>
     </tr>
     <?php while ($p = $res->fetch_assoc()): ?>
-    <tr data-id="<?= $p['id'] ?>"
-        data-modelo="<?= htmlspecialchars($p['modelo'], ENT_QUOTES) ?>">
+    <tr data-id="<?= $p['id'] ?>" data-modelo="<?= htmlspecialchars($p['modelo'], ENT_QUOTES) ?>">
         <td class="col-check"><input type="checkbox" class="row-check" onchange="atualizarBarra()"></td>
         <td><?= htmlspecialchars($p['modelo']) ?></td>
     </tr>
     <?php endwhile;
-    // FIX: resultado e statement liberados após o loop
     $res->free();
     $stmt->close();
     ?>
