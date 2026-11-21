@@ -1,8 +1,40 @@
 <?php
+defined('RMA_APP') || exit;
 $msg = '';
-$backupDir = "C:/Users/Estoque/Desktop/Backup BD";
+$backupDir = BACKUP_DIR;   // definido no config.local.php
 $ultimoBackup = null;
 $diasDesdeUltimo = null;
+
+if (isset($_POST['fazer_backup'])) {
+    if (!is_dir($backupDir) && !@mkdir($backupDir, 0775, true)) {
+        $msg = "Não foi possível criar a pasta de backup. Confira o BACKUP_DIR no config.local.php.";
+    } else {
+        $arquivo = $backupDir . '/controle_rma_' . date('Y-m-d_H-i-s') . '.sql';
+
+        // Cada parte passa pelo escapeshellarg, então nenhum valor da config
+        // vira comando no terminal. O --result-file evita depender do ">" do shell.
+        $partes = [
+            escapeshellarg(MYSQLDUMP_PATH),
+            '--host=' . escapeshellarg(DB_HOST),
+            '--user=' . escapeshellarg(DB_USER),
+        ];
+        if (DB_PASS !== '') {
+            $partes[] = '--password=' . escapeshellarg(DB_PASS);
+        }
+        $partes[] = '--result-file=' . escapeshellarg($arquivo);
+        $partes[] = escapeshellarg(DB_NAME);
+
+        exec(implode(' ', $partes) . ' 2>&1', $output, $retorno);
+
+        if ($retorno === 0) {
+            $msg = "Backup realizado com sucesso!";
+            registrarLog($conn, 'BACKUP', 'banco', basename($arquivo));
+        } else {
+            $msg = "Erro ao realizar backup. Confira o MYSQLDUMP_PATH no config.local.php.";
+            error_log('Sistema RMA: backup falhou: ' . implode(' | ', $output));
+        }
+    }
+}
 
 $arquivos = glob($backupDir . "/*.sql");
 if ($arquivos) {
@@ -14,20 +46,6 @@ if ($arquivos) {
     });
     $ultimoBackup = filemtime($ultimoArquivo);
     $diasDesdeUltimo = floor((time() - $ultimoBackup) / 86400);
-}
-
-if (isset($_POST['fazer_backup'])) {
-    $data = date("Y-m-d_H-i-s");
-    $arquivo = $backupDir . "/controle_rma_$data.sql";
-
-    $mysqldump = '"C:/xampp/mysql/bin/mysqldump.exe"';
-    $comando = "$mysqldump -u root controle_rma > \"$arquivo\"";
-
-    exec($comando, $output, $retorno);
-
-    $msg = ($retorno === 0)
-        ? "Backup realizado com sucesso!"
-        : "Erro ao realizar backup. Verifique se a pasta existe.";
 }
 ?>
 
@@ -44,6 +62,7 @@ if (isset($_POST['fazer_backup'])) {
 </div>
 
 <form method="POST" class="form-box" id="formBackup">
+    <?= csrfCampo() ?>
     <button name="fazer_backup">Fazer Backup Agora</button>
 </form>
 

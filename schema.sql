@@ -47,9 +47,25 @@ CREATE TABLE processador_cliente (
 -- -------------------------------------------
 CREATE TABLE logs (
     id        INT          NOT NULL AUTO_INCREMENT,
+    usuario   VARCHAR(50)  NULL,
     acao      VARCHAR(50)  NOT NULL,
     entidade  VARCHAR(50)  NOT NULL,
     detalhe   TEXT,
     criado_em DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
+);
+
+-- -------------------------------------------
+-- Usuários do sistema
+-- -------------------------------------------
+-- admin: tudo. operador: consulta, cadastra e vincula, sem editar nem excluir.
+-- Crie o primeiro usuário com: php criar_usuario.php <usuario> admin
+CREATE TABLE usuarios (
+    id         INT                         NOT NULL AUTO_INCREMENT,
+    usuario    VARCHAR(50)                 NOT NULL,
+    senha_hash VARCHAR(255)                NOT NULL,
+    perfil     ENUM('admin', 'operador')   NOT NULL DEFAULT 'operador',
+    criado_em  DATETIME                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_usuarios_usuario (usuario)
 );

@@ -1,4 +1,5 @@
 <?php
+defined('RMA_APP') || exit;
 $limite       = 30;
 $pagina_atual = isset($_GET['p']) ? max((int)$_GET['p'], 1) : 1;
 $inicio       = ($pagina_atual - 1) * $limite;
@@ -8,7 +9,7 @@ $total       = (int)$countResult->fetch_assoc()['total'];
 $countResult->free();
 $total_paginas = max(ceil($total / $limite), 1);
 
-$stmt = $conn->prepare("SELECT id, acao, entidade, detalhe, criado_em FROM logs ORDER BY criado_em DESC LIMIT ?,?");
+$stmt = $conn->prepare("SELECT id, usuario, acao, entidade, detalhe, criado_em FROM logs ORDER BY criado_em DESC, id DESC LIMIT ?,?");
 $stmt->bind_param('ii', $inicio, $limite);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -18,6 +19,10 @@ $badgeClass = [
     'INSERIR'  => 'badge-inserir',
     'EDITAR'   => 'badge-editar',
     'EXCLUIR'  => 'badge-excluir',
+    'LOGIN'        => 'badge-sessao',
+    'LOGOUT'       => 'badge-sessao',
+    'BACKUP'       => 'badge-sessao',
+    'LOGIN_FALHOU' => 'badge-excluir',
 ];
 ?>
 
@@ -30,6 +35,7 @@ $badgeClass = [
 <table>
     <tr>
         <th>Data/Hora</th>
+        <th>Usuário</th>
         <th>Ação</th>
         <th>Entidade</th>
         <th style="text-align:left">Detalhe</th>
@@ -39,6 +45,7 @@ $badgeClass = [
     ?>
     <tr>
         <td style="white-space:nowrap"><?= date('d/m/Y H:i:s', strtotime($r['criado_em'])) ?></td>
+        <td><?= htmlspecialchars($r['usuario'] ?? '-') ?></td>
         <td><span class="badge <?= $cls ?>"><?= htmlspecialchars($r['acao']) ?></span></td>
         <td><?= htmlspecialchars($r['entidade']) ?></td>
         <td style="text-align:left;font-size:13px;color:var(--secondary)"><?= htmlspecialchars($r['detalhe']) ?></td>

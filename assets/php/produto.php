@@ -1,4 +1,5 @@
 <?php
+defined('RMA_APP') || exit;
 $msg   = '';
 $busca = trim($_GET['busca'] ?? '');
 
@@ -61,6 +62,7 @@ if (isset($_POST['add_produto'])) {
 <?php endif; ?>
 
 <form method="POST" class="form-box">
+    <?= csrfCampo() ?>
     <input type="text" name="modelo_novo" placeholder="Modelo" required>
     <button name="add_produto">Cadastrar</button>
 </form>
@@ -100,6 +102,7 @@ $res = $stmt->get_result();
 </table>
 
 <form method="POST" id="form-excluir" style="display:none">
+    <?= csrfCampo() ?>
     <input type="hidden" name="excluir_ids" id="excluir-ids">
     <input type="hidden" name="excluir" value="1">
 </form>
@@ -108,6 +111,7 @@ $res = $stmt->get_result();
     <div class="modal-box">
         <h3>Editar Processador</h3>
         <form method="POST" class="form-box">
+    <?= csrfCampo() ?>
             <input type="hidden" name="editar_id" id="edit-id">
             <label>Modelo</label>
             <input type="text" name="modelo" id="edit-modelo" placeholder="Modelo" required>

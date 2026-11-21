@@ -1,6 +1,6 @@
 # Sistema RMA
 
-Sistema web para controle de processadores em processo de **RMA** (Return Merchandise Authorization). Permite cadastrar clientes e modelos de processadores, vinculá-los com seus respectivos números de série e gerenciar os vínculos através de uma interface com modo de edição protegido por senha.
+Sistema web para controle de processadores em processo de **RMA** (Return Merchandise Authorization). Permite cadastrar clientes e modelos de processadores, vinculá-los com seus respectivos números de série e gerenciar os vínculos, com login por usuário e perfis de acesso (admin e operador).
 
 ## Tecnologias
 
@@ -22,71 +22,39 @@ Sistema web para controle de processadores em processo de **RMA** (Return Mercha
 
 ### 1. Banco de dados
 
-Execute o arquivo `schema.sql` incluído no repositório, ou rode o SQL abaixo manualmente no phpMyAdmin, MySQL Workbench, HeidiSQL etc.:
+**Banco novo:** rode o `schema.sql` no phpMyAdmin, HeidiSQL ou no terminal. Ele cria o banco `controle_rma` com todas as tabelas.
 
-```sql
-CREATE DATABASE IF NOT EXISTS controle_rma
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+**Banco de uma versão anterior:** rode só o `migracao_usuarios.sql`, uma vez. Ele cria a tabela `usuarios` e acrescenta a coluna `usuario` no histórico, sem mexer nos dados.
 
-USE controle_rma;
+### 2. Configuração
 
-CREATE TABLE clientes (
-    id   INT          AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL UNIQUE
-);
-
-CREATE TABLE processadores (
-    id     INT          AUTO_INCREMENT PRIMARY KEY,
-    modelo VARCHAR(255) NOT NULL UNIQUE
-);
-
-CREATE TABLE processador_cliente (
-    id             INT          AUTO_INCREMENT PRIMARY KEY,
-    cliente_id     INT          NOT NULL,
-    processador_id INT          NOT NULL,
-    serial_number  VARCHAR(255) NOT NULL UNIQUE,
-    data_cadastro  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (cliente_id)     REFERENCES clientes(id),
-    FOREIGN KEY (processador_id) REFERENCES processadores(id)
-);
-
-CREATE TABLE logs (
-    id        INT         AUTO_INCREMENT PRIMARY KEY,
-    acao      VARCHAR(50) NOT NULL,
-    entidade  VARCHAR(50) NOT NULL,
-    detalhe   TEXT,
-    criado_em DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-> **Banco já existente?** Se você já tem o banco de uma versão anterior, só precisa criar a tabela `logs` — as outras já existem.
-
-### 2. Configuração da conexão
-
-Edite `assets/php/db.php` com os dados do seu ambiente:
+Copie `config.example.php` para `config.local.php` e ajuste:
 
 ```php
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '');            // senha do MySQL (padrão XAMPP: vazia)
+define('DB_PASS', '');                                   // padrão do XAMPP: vazia
 define('DB_NAME', 'controle_rma');
-define('ADMIN_PASS', '1234');     // ⚠️ altere antes de usar em produção
+define('BACKUP_DIR', 'C:/Users/SeuUsuario/Desktop/Backup BD');
+define('MYSQLDUMP_PATH', 'C:/xampp/mysql/bin/mysqldump.exe');
+define('SESSAO_MINUTOS', 480);
 ```
 
-### 3. Configuração do backup
+O `config.local.php` está no `.gitignore`, então a senha do banco e os caminhos da sua máquina não vão para o repositório. Use uma pasta de backup **fora** do `htdocs`, senão os arquivos `.sql` ficam acessíveis pelo navegador. A pasta é criada sozinha no primeiro backup.
 
-Edite o topo de `assets/php/backup.php` com os caminhos do seu ambiente:
+### 3. Primeiro usuário
 
-```php
-$backupDir = "C:/Users/SeuUsuario/Desktop/Backup BD"; // pasta de destino
-$mysqldump = '"C:/xampp/mysql/bin/mysqldump.exe"';     // caminho do mysqldump
+No terminal, dentro da pasta do projeto:
+
+```
+C:\xampp\php\php.exe criar_usuario.php matheus admin
 ```
 
-> **Atenção:** o recurso de backup foi desenvolvido para **Windows com XAMPP**. A pasta de destino precisa existir antes de fazer o primeiro backup.
+A senha é pedida em seguida (mínimo 8 caracteres) e não fica no histórico do terminal. O mesmo comando cria operadores (`operador` no lugar de `admin`) e, se o usuário já existe, troca a senha e o perfil. O script só roda pelo terminal; aberto pelo navegador, responde 404.
 
 ### 4. Servidor
 
-Coloque a pasta do projeto dentro de `C:/xampp/htdocs/` e acesse via:
+Coloque a pasta do projeto dentro de `C:/xampp/htdocs/` e acesse:
 
 ```
 http://localhost/Sistema_RMA/
@@ -106,9 +74,29 @@ http://localhost/Sistema_RMA/
 | **Histórico** | Log de todas as ações realizadas no sistema (vincular, inserir, editar, excluir) com badges por tipo |
 | **Backup do Banco** | Gera um dump `.sql` do banco na pasta configurada e exibe quando foi o último backup |
 
-### Modo de edição
+### Login e perfis
 
-As operações de edição e exclusão ficam bloqueadas por padrão. Clique no cadeado **🔒** no canto superior direito e informe a senha definida em `db.php` para habilitar o modo de edição. Clique novamente no cadeado **🔓** para sair.
+Todas as páginas e a exportação CSV exigem login.
+
+| Perfil | Pode |
+|--------|------|
+| **operador** | Consultar, cadastrar clientes e processadores, vincular e exportar CSV |
+| **admin** | Tudo do operador, mais editar, excluir, ver o Histórico e fazer Backup |
+
+As permissões são conferidas **no servidor**, antes de a página ser montada. Esconder botões na tela é só conforto; um POST montado na mão por um operador para excluir algo recebe `403`.
+
+Para o admin, o cadeado **🔒** no topo continua existindo como trava contra clique sem querer: ele mostra as caixas de seleção e a barra de editar/excluir.
+
+### Segurança
+
+- Senhas guardadas com `password_hash` (bcrypt) e conferidas com `password_verify`
+- ID de sessão trocado no login (contra fixação de sessão), cookie `HttpOnly` e `SameSite=Lax`, expiração por inatividade
+- Token CSRF em todo formulário POST, inclusive login e logout
+- Bloqueio de 15 minutos após 5 senhas erradas para o mesmo usuário
+- Mensagem de erro igual para usuário inexistente e senha errada, com o mesmo tempo de resposta
+- Consultas com prepared statements em tudo que recebe dado do usuário
+- Arquivos de `assets/php/` não rodam se acessados direto pela URL
+- Histórico registra quem fez cada ação, além de logins, falhas de login, logouts e backups
 
 ### Exportação CSV
 
@@ -120,9 +108,14 @@ Na página de Processadores Vinculados, o botão **↓ Exportar CSV** gera um ar
 
 ```
 Sistema_RMA/
-├── index.php                  # Entry point — roteamento de páginas
-├── exportar.php               # Script standalone de exportação CSV
-├── schema.sql                 # Schema completo do banco de dados
+├── index.php                  # Roteamento de páginas e checagem de permissões
+├── login.php
+├── logout.php
+├── exportar.php               # Exportação CSV (exige login)
+├── criar_usuario.php          # Cria/atualiza usuários pelo terminal
+├── config.example.php         # Modelo do config.local.php
+├── schema.sql                 # Schema completo (banco novo)
+├── migracao_usuarios.sql      # Atualização de banco de versão anterior
 ├── assets/
 │   ├── css/
 │   │   └── style.css
@@ -130,6 +123,7 @@ Sistema_RMA/
 │   │   └── processadores.js
 │   └── php/
 │       ├── db.php             # Conexão + registrarLog()
+│       ├── auth.php           # Sessão, login, perfis e CSRF
 │       ├── dashboard.php
 │       ├── listar.php
 │       ├── vincular.php
@@ -143,14 +137,14 @@ Sistema_RMA/
 
 ## Limitações conhecidas
 
-- **Senha exposta no HTML:** A senha do modo de edição é embutida no fonte da página para comparação client-side. Para uso em rede interna restrita isso é aceitável, mas em produção o recomendado é mover a verificação para o servidor via sessão PHP.
+- **Sem Post/Redirect/Get (PRG):** após salvar ou excluir, a página não redireciona. Recarregar logo depois de uma ação pode reenviar o formulário.
 
-- **Sem Post/Redirect/Get (PRG):** Após salvar ou excluir registros, a página não faz redirecionamento. Recarregar imediatamente após uma ação pode reenviar o formulário.
+- **Usuários só pelo terminal:** ainda não há tela de gerenciamento de usuários; criar, trocar senha e mudar perfil é pelo `criar_usuario.php`.
 
-- **Backup somente no Windows/XAMPP:** Os caminhos do `mysqldump` e da pasta de destino estão fixos para o ambiente Windows com XAMPP.
+- **HTTPS:** em rede interna o sistema roda em HTTP. Se for exposto fora da rede, configure HTTPS no Apache; o cookie de sessão passa a ser `Secure` sozinho.
 
 ---
 
 ## Autor
 
-Matheus Guida — [GitHub](https://github.com/Nevek20)
+Matheus Guida | [GitHub](https://github.com/Nevek20)

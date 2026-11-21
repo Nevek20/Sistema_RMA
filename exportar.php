@@ -4,7 +4,12 @@
  * Acesse diretamente: http://localhost/Sistema_RMA/exportar.php?...
  * Aceita os mesmos filtros de listar.php via GET.
  */
+define('RMA_APP', true);
 require_once __DIR__ . '/assets/php/db.php';
+require_once __DIR__ . '/assets/php/auth.php';
+iniciarSessao();
+exigirLogin();
+
 $conn = getConn();
 
 $busca      = trim($_GET['busca']      ?? '');

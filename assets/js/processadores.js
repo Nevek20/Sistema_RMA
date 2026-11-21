@@ -1,36 +1,21 @@
 // ================================================
-// SENHA / MODO EDIÇÃO
+// MODO EDIÇÃO
 // ================================================
+// O botão só aparece para admin, e o servidor confere o perfil em toda ação.
+// O modo de edição aqui é só uma trava visual contra clique sem querer.
 
 let modoEdicao = false;
 
-function abrirModalSenha() {
-    if (modoEdicao) { desativarModoEdicao(); return; }
-    document.getElementById('input-senha').value = '';
-    document.getElementById('senha-erro').style.display = 'none';
-    document.getElementById('modal-senha').classList.add('ativo');
-    setTimeout(() => document.getElementById('input-senha').focus(), 100);
-}
-
-function fecharModalSenha() {
-    document.getElementById('modal-senha').classList.remove('ativo');
-}
-
-function confirmarSenha() {
-    if (document.getElementById('input-senha').value === ADMIN_PASS) {
-        fecharModalSenha();
-        ativarModoEdicao();
-    } else {
-        document.getElementById('senha-erro').style.display = 'block';
-        document.getElementById('input-senha').value = '';
-        document.getElementById('input-senha').focus();
-    }
+function alternarModoEdicao() {
+    if (modoEdicao) desativarModoEdicao();
+    else ativarModoEdicao();
 }
 
 function ativarModoEdicao() {
     modoEdicao = true;
     document.body.classList.add('modo-edicao');
     const btn = document.getElementById('btn-lock');
+    if (!btn) return;
     btn.textContent = '🔓';
     btn.title = 'Sair do modo de edição';
 }
@@ -43,6 +28,7 @@ function desativarModoEdicao() {
     if (ca) ca.checked = false;
     atualizarBarra();
     const btn = document.getElementById('btn-lock');
+    if (!btn) return;
     btn.textContent = '🔒';
     btn.title = 'Modo de edição';
 }
@@ -60,6 +46,7 @@ function atualizarBarra() {
     const sel = document.querySelectorAll('.row-check:checked');
     const barra = document.getElementById('barra-acoes');
     const btnEditar = document.getElementById('btn-editar-sel');
+    if (!barra) return;
     if (sel.length > 0) {
         barra.classList.add('ativo');
         document.getElementById('barra-contagem').textContent = sel.length + ' selecionado(s)';
@@ -122,14 +109,11 @@ function confirmarExcluir() {
 // ================================================
 
 document.addEventListener('click', e => {
-    if (e.target.id === 'modal-senha')  fecharModalSenha();
     if (e.target.id === 'modal-editar') fecharModalEditar();
 });
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { fecharModalSenha(); fecharModalEditar(); }
-    if (e.key === 'Enter' && document.getElementById('modal-senha')?.classList.contains('ativo'))
-        confirmarSenha();
+    if (e.key === 'Escape') fecharModalEditar();
 });
 
 // ================================================

@@ -59,11 +59,38 @@ nav a:hover {
 }
 
 /* Cadeado fixo no canto direito, sem afetar o centro */
-.btn-lock {
+.nav-usuario {
     position: absolute;
     right: 16px;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-nome {
+    font-size: 13px;
+    color: var(--secondary);
+}
+
+.btn-sair {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-sair:hover {
+    background: #fff7ed;
+    border-color: var(--primary);
+}
+
+.btn-lock {
     background: none;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -647,9 +674,26 @@ footer a:hover { text-decoration: underline; }
 .badge-inserir  { background: #dbeafe; color: #1e40af; }
 .badge-editar   { background: #fef3c7; color: #92400e; }
 .badge-excluir  { background: #fee2e2; color: #991b1b; }
+.badge-sessao   { background: #e2e8f0; color: #334155; }
 
 @media (max-width: 700px) {
     .dash-grid { grid-template-columns: 1fr; }
     .filtros-grid input[type="text"] { width: 100%; }
     .listar-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+}
+
+/* ── Login ─────────────────────────────────────────────────────────────── */
+
+.pagina-login main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-box h3 {
+    text-align: center;
+}
+
+.login-erro {
+    display: block;
 }

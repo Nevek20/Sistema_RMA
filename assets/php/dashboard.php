@@ -1,4 +1,5 @@
 <?php
+defined('RMA_APP') || exit;
 // ── Stats ────────────────────────────────────────────────────────────────────
 $r = $conn->query("SELECT COUNT(*) AS total FROM processador_cliente")->fetch_assoc();
 $totalVinculos = (int)$r['total'];

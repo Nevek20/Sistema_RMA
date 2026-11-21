@@ -1,4 +1,5 @@
 <?php
+defined('RMA_APP') || exit;
 $msg = '';
 
 if (isset($_POST['vincular'])) {
@@ -42,6 +43,7 @@ if (isset($_POST['vincular'])) {
 <?php endif; ?>
 
 <form method="POST" class="form-box" id="formVincular">
+    <?= csrfCampo() ?>
     <div id="processadores-container">
         <div class="item-processador">
             <div class="linha-topo"><span>Processador</span></div>
